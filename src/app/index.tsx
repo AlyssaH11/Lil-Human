@@ -63,6 +63,7 @@ const [hunger, setHunger] = useState(75);
 const [happiness, setHappiness] = useState(100);
 const [energy, setEnergy] = useState(100);
 const [hygiene, setHygiene] = useState(100);
+const [showFood, setShowFood] = useState(false);
 
 // --------------------
 // CURRENT ROOM
@@ -78,6 +79,10 @@ const [reaction, setReaction] = useState('');
 const [reactionFace, setReactionFace] = useState('');
 const humanX = useState(new Animated.Value(0))[0];
 const humanY = useState(new Animated.Value(0))[0];
+const foodY = useState(new Animated.Value(0))[0];
+const foodX = useState(new Animated.Value(0))[0];
+const sleepY = useState(new Animated.Value(0))[0];
+const sleepX = useState(new Animated.Value(0))[0]
 const showReaction = (message, face) => {
   setReaction(message);
   setReactionFace(face);
@@ -105,25 +110,59 @@ useEffect(() => {
 }, []);
   return (
       <View
-  style={[
-    styles.container,
-    currentRoom === 'bathroom' && styles.bathroomContainer,
-  ]}
+style={[
+  styles.container,
+  currentRoom === 'bathroom' && styles.bathroomContainer,
+  currentRoom === 'bedroom' && styles.bedroomContainer,
+]}
 >
         <Text style={styles.title}>Lil Human</Text>
         <View style={styles.floor} />
         <View style={styles.baseboard} />
        
+   {currentRoom === 'kitchen' && (
         <View style={styles.window}>
-  <View style={styles.windowPane} />
-  <View style={styles.windowPane} />
-  <View style={styles.windowPane} />
-  <View style={styles.windowPane} />
-</View>
+        <View style={styles.windowPane} />
+        <View style={styles.windowPane} />
+        <View style={styles.windowPane} />
+        <View style={styles.windowPane} />
+  </View>
+)}
 
-<View style={styles.rug} />
+{currentRoom === 'bathroom' && (
+  <View style={styles.bathroomFloor} />
+)}
+
+{currentRoom === 'bathroom' && (
+  <View style={styles.bathtub}>
+    <View style={styles.tubInside} />
+    <View style={styles.faucet} />
+  </View>
+)}
 
 {currentRoom === 'living' && (
+  <View style={styles.rug} />
+)}
+
+{currentRoom === 'kitchen' && (
+  <View style={styles.kitchenFloor}>
+    <View style={styles.tileRow}>
+      <View style={styles.tileLight} />
+      <View style={styles.tileDark} />
+      <View style={styles.tileLight} />
+      <View style={styles.tileDark} />
+    </View>
+
+    <View style={styles.tileRow}>
+      <View style={styles.tileDark} />
+      <View style={styles.tileLight} />
+      <View style={styles.tileDark} />
+      <View style={styles.tileLight} />
+    </View>
+  </View>
+)}
+
+{currentRoom === 'kitchen' && (
   <View style={styles.fridge}>
     <View style={styles.fridgeDivider} />
     <View style={styles.fridgeHandleTop} />
@@ -131,7 +170,7 @@ useEffect(() => {
   </View>
 )}
 
-{currentRoom === 'living' && (
+{currentRoom === 'kitchen' && (
 <View style={styles.counter}>
   <View style={styles.counterTop} />
   <View style={styles.sink} />
@@ -146,40 +185,29 @@ useEffect(() => {
 </View>
 )}
 
-<Svg
-  style={styles.bed}
-  width={360}
-  height={330}
-  viewBox="0 0 300 330"
->
-  {/* Mattress */}
-  <Polygon
-    points="65,30 235,30 285,300 15,300"
-    fill="#ffffff"
-    stroke="#4a4a4a"
-    strokeWidth="6"
+{currentRoom === 'bedroom' && (
+  <Image
+    source={require('../../assets/images/bedroom-wall.png')}
+    style={styles.bedroomWallImage}
+    resizeMode="cover"
   />
+)}
 
-  {/* Headboard */}
-  <Polygon
-    points="55,10 245,10 238,55 62,55"
-    fill="#6C3FA0"
-    stroke="#4a4a4a"
-    strokeWidth="6"
+{currentRoom === 'bedroom' && (
+  <Image
+    source={require('../../assets/images/bedroom-wall.png')}
+    style={styles.bedroomWallImage}
+    resizeMode="cover"
   />
+)}
 
-  {/* Pillow */}
-  <Polygon
-    points="85,65 215,65 225,125 75,125"
-    fill="#2878c7"
+{currentRoom === 'bedroom' && (
+  <Image
+    source={require('../../assets/images/Bedroom-bed.png')}
+    style={styles.bedroomBedImage}
+    resizeMode="contain"
   />
-
-  {/* Blanket */}
-  <Polygon
-    points="70,145 230,145 270,285 30,285"
-    fill="#2878c7"
-  />
-</Svg>
+)}
 
       <View style={styles.stats}>
   <CircularMeter value={happiness} icon="❤️" />
@@ -192,14 +220,30 @@ useEffect(() => {
   style={[
     styles.humanArea,
     {
-      transform: [
-        { translateX: humanX },
-        { translateY: humanY },
-      ],
+        transform: [
+  { translateX: Animated.add(humanX, sleepX) },
+  { translateY: Animated.add(humanY, sleepY) },
+],
     },
   ]}
 >
-     
+
+  {showFood && currentRoom === 'kitchen' && (
+  <Animated.Text
+    style={[
+      styles.food,
+      {
+        transform: [
+  { translateX: foodX },
+  { translateY: foodY },
+  { rotate: '-180deg' },
+],
+      },
+    ]}
+  >
+    🍕
+  </Animated.Text>
+)}
 
 <Image
   source={require('../../assets/characters/lil-human.png')}
@@ -234,86 +278,181 @@ useEffect(() => {
 ==================== */}
 
           <View style={styles.actions}>
-           <Pressable
-             style={styles.button}
-             onPress={() => {
-  setHunger(Math.min(hunger + 5, 100));
+         <Pressable
+  style={styles.button}
+  onPress={() => {
+    sleepX.setValue(0);
+    sleepY.setValue(0);
 
-  Animated.timing(humanX, {
-    toValue: 650,
-    duration: 1000,
-    useNativeDriver: true,
-  }).start(() => {
-    setTimeout(() => {
+    const eatPizza = () => {
+      foodX.setValue(0);
+      foodY.setValue(0);
+      setShowFood(true);
+
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(foodX, {
+            toValue: -35,
+            duration: 700,
+            useNativeDriver: true,
+          }),
+          Animated.timing(foodY, {
+            toValue: -132,
+            duration: 700,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          setTimeout(() => {
+            setShowFood(false);
+            setHunger(Math.min(hunger + 5, 100));
+            showReaction('Yesss. Food. 🍕', '😋');
+          }, 1200);
+        });
+      }, 500);
+    };
+
+    if (currentRoom === 'kitchen') {
+      eatPizza();
+      return;
+    }
+
+    Animated.timing(humanX, {
+      toValue: 400,
+      duration: 700,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentRoom('kitchen');
+
+      humanX.setValue(-400);
+
       Animated.timing(humanX, {
-        toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      }).start();
-    }, 2000);
-  });
-
-  showReaction('Yesss. Food. 🍕', '😋');
-}}
->
-          <Text style={styles.buttonText}>🍕 Feed</Text>
-           </Pressable>
-           <Pressable
-            style={styles.button}
-            onPress={() => {
-  setHappiness(Math.min(happiness + 5, 100));
-
-  Animated.timing(humanY, {
-    toValue: 90,
-    duration: 700,
-    useNativeDriver: true,
-  }).start(() => {
-    setTimeout(() => {
-      Animated.timing(humanY, {
         toValue: 0,
         duration: 700,
         useNativeDriver: true,
-      }).start();
-    }, 2000);
-  });
-
-  showReaction('Okayyy, that was actually fun. 😂', '😄');
-}}
+      }).start(() => {
+        eatPizza();
+      });
+    });
+  }}
 >
-           <Text style={styles.buttonText}>🎮 Play</Text>
-           </Pressable>
+  <Text style={styles.buttonText}>🍕 Feed</Text>
+</Pressable>
+           
            <Pressable
-              style={styles.button}
-             onPress={() => {
-  setEnergy(Math.min(energy + 5, 100));
+  style={styles.button}
+  onPress={() => {
+    sleepX.setValue(0);
+    sleepY.setValue(0);
 
-  Animated.timing(humanX, {
-    toValue: -650,
-    duration: 1000,
-    useNativeDriver: true,
-  }).start(() => {
+    const playAction = () => {
+      setHappiness(Math.min(happiness + 5, 100));
+
+      Animated.timing(humanY, {
+        toValue: 90,
+        duration: 700,
+        useNativeDriver: true,
+      }).start(() => {
+        setTimeout(() => {
+          Animated.timing(humanY, {
+            toValue: 0,
+            duration: 700,
+            useNativeDriver: true,
+          }).start();
+        }, 2000);
+      });
+
+      showReaction('Okayyy, that was actually fun. 😂', '😄');
+    };
+
+    if (currentRoom === 'living') {
+      playAction();
+      return;
+    }
+
+    setCurrentRoom('living');
+
     setTimeout(() => {
+      playAction();
+    }, 100);
+  }}
+>
+  <Text style={styles.buttonText}>🎮 Play</Text>
+</Pressable>
+ 
+<Pressable
+  style={styles.button}
+  onPress={() => {
+    const sleepAction = () => {
+      setEnergy(Math.min(energy + 5, 100));
+      sleepX.setValue(0);
+      sleepY.setValue(0);
+      showReaction('Do not disturb. 😴', '😴');
+    };
+
+    if (currentRoom === 'bedroom') {
+      sleepAction();
+      return;
+    }
+
+    Animated.timing(humanX, {
+      toValue: 400,
+      duration: 700,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentRoom('bedroom');
+
+      humanX.setValue(-400);
+
       Animated.timing(humanX, {
         toValue: 0,
-        duration: 1000,
+        duration: 700,
         useNativeDriver: true,
-      }).start();
-    }, 2000);
-  });
+      }).start(() => {
+        sleepAction();
+      });
+    });
+  }}
+>
+  <Text style={styles.buttonText}>🛏️ Sleep</Text>
+</Pressable>
+           
+<Pressable
+  style={styles.button}
+  onPress={() => {
+    sleepX.setValue(0);
+    sleepY.setValue(0);
 
-  showReaction('Do not disturb. 😴', '😴');
-}}
+    const cleanAction = () => {
+      setHygiene(Math.min(hygiene + 5, 100));
+      showReaction('Much better. I was getting questionable. 🧼', '🧼');
+    };
+
+    if (currentRoom === 'bathroom') {
+      cleanAction();
+      return;
+    }
+
+    Animated.timing(humanX, {
+      toValue: 400,
+      duration: 700,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentRoom('bathroom');
+
+      humanX.setValue(-400);
+
+      Animated.timing(humanX, {
+        toValue: 0,
+        duration: 700,
+        useNativeDriver: true,
+      }).start(() => {
+        cleanAction();
+      });
+    });
+  }}
 >
-          <Text style={styles.buttonText}>🛏️ Sleep</Text>
-            </Pressable>
-            <Pressable
-              style={styles.button}
-              onPress={() => {
-  setCurrentRoom('bathroom');
-}}
->
-          <Text style={styles.buttonText}>🛁 Clean</Text>
-            </Pressable>
+  <Text style={styles.buttonText}>🛁 Clean</Text>
+</Pressable>
           </View>
           </View>
   );
@@ -336,6 +475,10 @@ container: {
 
 bathroomContainer: {
   backgroundColor: '#d9f0f2',
+},
+
+bedroomContainer: {
+  backgroundColor: '#4A2C4F',
 },
 
 floor: {
@@ -386,6 +529,48 @@ rug: {
   borderRadius: 95,
 },
 
+kitchenFloor: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: '35%',
+  overflow: 'hidden',
+},
+
+tileRow: {
+  flexDirection: 'row',
+  flex: 1,
+},
+
+tileLight: {
+  flex: 1,
+  backgroundColor: '#f5efe6',
+},
+
+tileDark: {
+  flex: 1,
+  backgroundColor: '#c9dfe0',
+},
+
+bedroomFloor: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: '35%',
+  backgroundColor: '#d8c3e8',
+},
+
+bathroomFloor: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: '35%',
+  backgroundColor: '#cfe8e8',
+},
+
 fridge: {
   position: 'absolute',
   bottom: '35%',
@@ -396,6 +581,14 @@ fridge: {
   borderWidth: 5,
   borderColor: '#4a4a4a',
   borderRadius: 18,
+},
+
+food: {
+  position: 'absolute',
+  fontSize: 50,
+  top: 260,
+  left: 245,
+  zIndex: 20,
 },
 
 fridgeDivider: {
@@ -517,6 +710,97 @@ bed: {
   position: 'absolute',
   bottom: 105,
   left: 35,
+},
+
+bedroomBedImage: {
+  position: 'absolute',
+  bottom: 105,
+  width: '135%',
+  height: 600,
+},
+
+bedroomWallImage: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  width: '100%',
+  height: '100%',
+},
+
+frontBed: {
+  position: 'absolute',
+  bottom: 55,
+  left: 0,
+  right: 0,
+  height: 390,
+  alignItems: 'center',
+},
+
+headboard: {
+  position: 'absolute',
+  top: 0,
+  width: '90%',
+  height: 150,
+  backgroundColor: '#7B4BB7',
+  borderRadius: 34,
+  borderWidth: 4,
+  borderColor: '#4a4a4a',
+},
+
+pillowRow: {
+  position: 'absolute',
+  top: 15,
+  width: '92%',
+  flexDirection: 'row',
+  justifyContent: 'center',
+  gap: 4,
+  zIndex: 4,
+},
+
+bedPillow: {
+  width: 175,
+  height: 95,
+  backgroundColor: '#E8D9F8',
+  borderRadius: 40,
+  borderWidth: 3,
+  borderColor: '#4a4a4a',
+},
+
+mattress: {
+  position: 'absolute',
+  top: 110,
+  width: '98%',
+  height: 245,
+  backgroundColor: '#C88BD8',
+  borderRadius: 34,
+  borderWidth: 4,
+  borderColor: '#4a4a4a',
+},
+
+footboard: {
+  position: 'absolute',
+  bottom: 0,
+  width: '100%',
+  height: 115,
+  backgroundColor: '#6C3FA0',
+  borderTopLeftRadius: 24,
+  borderTopRightRadius: 24,
+  borderWidth: 4,
+  borderColor: '#4a4a4a',
+  zIndex: 5,
+},
+
+footboardPanel: {
+  position: 'absolute',
+  top: 18,
+  left: 25,
+  right: 25,
+  bottom: 18,
+  borderWidth: 3,
+  borderColor: '#4a4a4a',
+  borderRadius: 14,
 },
 
 pillow: {
@@ -643,4 +927,37 @@ meterIcon: {
   position: 'absolute',
   fontSize: 22,
 },
+
+bathtub: {
+  position: 'absolute',
+  bottom: 120,
+  left: 30,
+  width: 170,
+  height: 80,
+  backgroundColor: '#ffffff',
+  borderRadius: 25,
+  borderWidth: 3,
+  borderColor: '#b8d8e8',
+},
+
+tubInside: {
+  position: 'absolute',
+  top: 8,
+  left: 10,
+  right: 10,
+  height: 25,
+  backgroundColor: '#bde9f7',
+  borderRadius: 15,
+},
+
+faucet: {
+  position: 'absolute',
+  top: -18,
+  right: 25,
+  width: 12,
+  height: 22,
+  backgroundColor: '#9aa0a6',
+  borderRadius: 6,
+},
+
 });
