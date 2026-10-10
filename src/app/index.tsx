@@ -2,15 +2,15 @@
 // IMPORTS
 // ====================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Polygon } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 
 // ====================
 // CIRCULAR METER COMPONENT
 // ====================
 
-function CircularMeter({ value, icon }) {
+function CircularMeter({ value, icon }: { value: number; icon: string }) {
   const size = 60;
   const radius = 15;
   const circumference = 2 * Math.PI * radius;
@@ -41,7 +41,7 @@ function CircularMeter({ value, icon }) {
           strokeDasharray={`${circumference * (value / 100)} ${circumference}`}
           transform="rotate(-90 30 30)"
 />
-        />
+        
       </Svg>
 
       <Text style={styles.meterIcon}>{icon}</Text>
@@ -77,13 +77,99 @@ const [currentRoom, setCurrentRoom] = useState('living');
 
 const [reaction, setReaction] = useState('');
 const [reactionFace, setReactionFace] = useState('');
+const [randomThought, setRandomThought] = useState('');
+const [tapCount, setTapCount] = useState(0);
+const tapAnimation = useRef(new Animated.Value(0)).current;
+const handleHumanTap = () => {
+  const nextTap = tapCount + 1;
+  setTapCount(nextTap);
+
+  const responses = [
+    "Oh! Hi! 💜",
+    "Yes? Did you need something?",
+    "You're awfully interested in me today.",
+    "Okay, that's a lot of poking. 😂",
+    "PERSONAL SPACE, PLEASE!",
+    "I'm telling you, I have boundaries. 🙄",
+    "Fine. You win. I like the attention. 💜",
+  ];
+
+  setRandomThought(responses[(nextTap - 1) % responses.length]);
+
+  // Stop any previous tap animation
+  tapAnimation.stopAnimation();
+  tapAnimation.setValue(0);
+
+  const isAnnoyed = nextTap % 7 >= 4;
+
+  if (isAnnoyed) {
+    // Little side-to-side shake
+    Animated.sequence([
+      Animated.timing(tapAnimation, {
+        toValue: -1,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+      Animated.timing(tapAnimation, {
+        toValue: 1,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+      Animated.timing(tapAnimation, {
+        toValue: 0,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  } else {
+    // Happy little bounce
+    Animated.sequence([
+      Animated.timing(tapAnimation, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(tapAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }
+};
+
+
+// Gentle idle breathing animation
+const breathing = useRef(new Animated.Value(0)).current;
+
+
+useEffect(() => {
+  const animation = Animated.loop(
+    Animated.sequence([
+      Animated.timing(breathing, {
+        toValue: 1,
+        duration: 1800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(breathing, {
+        toValue: 0,
+        duration: 1800,
+        useNativeDriver: true,
+      }),
+    ])
+  );
+
+  animation.start();
+
+  return () => animation.stop();
+}, [breathing]);
 const humanX = useState(new Animated.Value(0))[0];
 const humanY = useState(new Animated.Value(0))[0];
 const foodY = useState(new Animated.Value(0))[0];
 const foodX = useState(new Animated.Value(0))[0];
 const sleepY = useState(new Animated.Value(0))[0];
 const sleepX = useState(new Animated.Value(0))[0]
-const showReaction = (message, face) => {
+const showReaction = (message: string, face: string) => {
   setReaction(message);
   setReactionFace(face);
 
@@ -92,7 +178,65 @@ const showReaction = (message, face) => {
     setReactionFace('');
   }, 5000);
 };
+// ====================
+// LIL HUMAN PERSONALITY
+// ====================
 
+useEffect(() => {
+  let timeout: ReturnType<typeof setTimeout>;
+
+  const generateThought = () => {
+    let thoughts: string[] = [];
+
+    if (hunger <= 30) {
+      thoughts = [
+        "Is it socially acceptable to eat an entire pizza?",
+        "My stomach is literally yelling at me.",
+        "Food. I need food. Immediately.",
+      ];
+    } else if (energy <= 30) {
+      thoughts = [
+        "I could sleep for approximately 47 years.",
+        "Why is being awake so exhausting?",
+        "If I close my eyes, does that count as sleeping?",
+      ];
+    } else if (happiness <= 30) {
+      thoughts = [
+        "Soooo... we doing anything today?",
+        "I'm bored enough to count ceiling tiles.",
+        "I need some excitement around here.",
+      ];
+    } else {
+      thoughts = [
+        "Are you just gonna stare at me? 👀",
+        "I wonder if penguins have knees...",
+        "You're my favorite human. Don't tell anyone. 💜",
+        "I feel like today is a good day for snacks.",
+        "Sometimes I think I'm the main character.",
+        "I should probably be productive... nah.",
+        "Do you think clouds ever get tired?",
+      ];
+    }
+
+    const thought = thoughts[Math.floor(Math.random() * thoughts.length)];
+
+    setRandomThought(thought);
+
+    timeout = setTimeout(() => {
+      setRandomThought('');
+      scheduleNextThought();
+    }, 5000);
+  };
+
+  const scheduleNextThought = () => {
+    const delay = Math.random() * 15000 + 15000;
+    timeout = setTimeout(generateThought, delay);
+  };
+
+  scheduleNextThought();
+
+  return () => clearTimeout(timeout);
+}, [hunger <= 30, energy <= 30, happiness <= 30]);
 
 // --------------------
 // STAT DECAY
@@ -242,17 +386,43 @@ style={[
     ]}
   >
     🍕
-  </Animated.Text>
+</Animated.Text>
 )}
 
-<Image
-  source={require('../../assets/characters/lil-human.png')}
-  style={styles.humanImage}
-  resizeMode="contain"
-/>
+<Pressable onPress={handleHumanTap}>
+  <Animated.Image
+    source={require('../../assets/characters/lil-human.png')}
+    style={[
+      styles.humanImage,
+      {
+       transform: [
+  {
+    scaleY: breathing.interpolate({
+      inputRange: [0, 1],
+      outputRange: [1, 1.009],
+    }),
+  },
+  {
+    translateX: tapAnimation.interpolate({
+      inputRange: [-1, 0, 1],
+      outputRange: [-8, 0, 8],
+    }),
+  },
+  {
+    translateY: tapAnimation.interpolate({
+      inputRange: [-1, 0, 1],
+      outputRange: [0, 0, -8],
+    }),
+  },
+],
+      },
+    ]}
+    resizeMode="contain"
+  />
+</Pressable>
 
 <Text style={styles.statusText}>
-              {hunger <= 20
+  {randomThought || (hunger <= 20
               ? "I'm starving! Feed me!"
               : energy <= 20
               ? "I'm exhausted..."
@@ -268,7 +438,7 @@ style={[
               ? "I'm getting kinda gross."
               : happiness <= 50
               ? "I'm bored..."
-              : "I'm doing great!"}
+              : "I'm doing great!")}
           </Text>
           {reaction !== '' && <Text>{reaction}</Text>}
           </Animated.View>
@@ -674,15 +844,6 @@ burner: {
   borderRadius: 8,
 },
 
-faucet: {
-  position: 'absolute',
-  top: -18,
-  left: 110,
-  width: 10,
-  height: 22,
-  backgroundColor: '#4a4a4a',
-  borderRadius: 5,
-},
 
 cabinetDoorLeft: {
   position: 'absolute',
