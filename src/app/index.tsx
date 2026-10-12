@@ -261,17 +261,26 @@ style={[
 ]}
 >
         <Text style={styles.title}>Lil Human</Text>
-        <View style={styles.floor} />
-        <View style={styles.baseboard} />
-       
-   {currentRoom === 'kitchen' && (
-        <View style={styles.window}>
-        <View style={styles.windowPane} />
-        <View style={styles.windowPane} />
-        <View style={styles.windowPane} />
-        <View style={styles.windowPane} />
-  </View>
+        {currentRoom === 'kitchen' && (
+  <Image
+    source={require('../../assets/rooms/kitchen.png')}
+    style={{
+  position: 'absolute',
+  width: '105%',
+  height: '105%',
+  top: '-2.58%',
+  left: '-2.58%',
+}}
+    resizeMode="cover"
+  />
 )}
+        {currentRoom !== 'kitchen' && (
+  <>
+    <View style={styles.floor} />
+    <View style={styles.baseboard} />
+  </>
+)}
+       
 
 {currentRoom === 'bathroom' && (
   <View style={styles.bathroomFloor} />
@@ -286,47 +295,6 @@ style={[
 
 {currentRoom === 'living' && (
   <View style={styles.rug} />
-)}
-
-{currentRoom === 'kitchen' && (
-  <View style={styles.kitchenFloor}>
-    <View style={styles.tileRow}>
-      <View style={styles.tileLight} />
-      <View style={styles.tileDark} />
-      <View style={styles.tileLight} />
-      <View style={styles.tileDark} />
-    </View>
-
-    <View style={styles.tileRow}>
-      <View style={styles.tileDark} />
-      <View style={styles.tileLight} />
-      <View style={styles.tileDark} />
-      <View style={styles.tileLight} />
-    </View>
-  </View>
-)}
-
-{currentRoom === 'kitchen' && (
-  <View style={styles.fridge}>
-    <View style={styles.fridgeDivider} />
-    <View style={styles.fridgeHandleTop} />
-    <View style={styles.fridgeHandleBottom} />
-  </View>
-)}
-
-{currentRoom === 'kitchen' && (
-<View style={styles.counter}>
-  <View style={styles.counterTop} />
-  <View style={styles.sink} />
-  
-  <View style={styles.stove}>
-  <View style={styles.burner} />
-  <View style={styles.burner} />
-
-</View>
-  <View style={styles.cabinetDoorLeft} />
-  <View style={styles.cabinetDoorRight} />
-</View>
 )}
 
 {currentRoom === 'bedroom' && (
@@ -392,10 +360,14 @@ style={[
 <Pressable onPress={handleHumanTap}>
   <Animated.Image
     source={require('../../assets/characters/lil-human.png')}
-    style={[
-      styles.humanImage,
-      {
-       transform: [
+     style={[
+  styles.humanImage,
+currentRoom === 'kitchen' && {
+  marginTop: 115,
+  marginLeft: 95,
+},
+  {
+    transform: [
   {
     scaleY: breathing.interpolate({
       inputRange: [0, 1],
